@@ -3,3 +3,7 @@
 __pycache__/
 .pytest_cache/
 *.egg-info/
+workflow-state.md
+implementation-plan.md
+execution-contract.md
+implementation-log.md
