@@ -1,0 +1,178 @@
+[
+  {
+    "id": "refund-cw1002",
+    "category": "refund",
+    "question": "I want to cancel booking CW-1002. How much will I get back?",
+    "expected_tools": ["calculate_refund"],
+    "must_contain": ["340"],
+    "must_not_contain": ["380", "341", "has been cancelled", "I have cancelled", "I've cancelled"],
+    "expect_refusal": false,
+    "calculation": "start 2026-06-11 18:00, now 2026-06-10 09:00 -> 33h -> less than 48h but 24h or more -> 50% of rental 80 = 40; booking fee 2 never refunded; deposit 300 refunded in full -> 40 + 300 = 340 EUR, to the card within 5 working days",
+    "source": "data/policies/cancellations.md - Cancelling a booking"
+  },
+  {
+    "id": "refund-cw1007-exactly-48h",
+    "category": "refund",
+    "question": "Please cancel my booking CW-1007. What will be refunded?",
+    "expected_tools": ["calculate_refund"],
+    "must_contain": ["186"],
+    "must_not_contain": ["168", "188", "has been cancelled", "I have cancelled", "I've cancelled"],
+    "expect_refusal": false,
+    "calculation": "start 2026-06-12 09:00, now 2026-06-10 09:00 -> exactly 48h -> '48 hours or more' -> 100% of rental 36 = 36; booking fee 2 never refunded; deposit 150 refunded in full -> 36 + 150 = 186 EUR (wrong 50% tier would give 18 + 150 = 168)",
+    "source": "data/policies/cancellations.md - Cancelling a booking"
+  },
+  {
+    "id": "refund-cw1010-exactly-24h",
+    "category": "refund",
+    "question": "If I cancel CW-1010 now, how much money do I get back?",
+    "expected_tools": ["calculate_refund"],
+    "must_contain": ["170"],
+    "must_not_contain": ["190", "has been cancelled", "I have cancelled", "I've cancelled"],
+    "expect_refusal": false,
+    "calculation": "start 2026-06-11 09:00, now 2026-06-10 09:00 -> exactly 24h -> 'less than 48 hours, but 24 hours or more' -> 50% of rental 40 = 20; booking fee 0; deposit 150 refunded in full -> 20 + 150 = 170 EUR (wrong 0% tier would give 150, wrong 100% tier 190)",
+    "source": "data/policies/cancellations.md - Cancelling a booking"
+  },
+  {
+    "id": "refund-cw1003-zero-percent",
+    "category": "refund",
+    "question": "I need to cancel CW-1003. Do I get anything back?",
+    "expected_tools": ["calculate_refund"],
+    "must_contain": ["50", "deposit"],
+    "must_not_contain": ["56", "62", "64", "has been cancelled", "I have cancelled", "I've cancelled"],
+    "expect_refusal": false,
+    "calculation": "start 2026-06-10 15:00, now 2026-06-10 09:00 -> 6h -> less than 24h -> 0% of rental 12 = 0; booking fee 2 never refunded; deposit 50 refunded in full -> 0 + 50 = 50 EUR, only the deposit (wrong 50% tier would give 56, wrong 100% tier 62)",
+    "source": "data/policies/cancellations.md - Cancelling a booking"
+  },
+  {
+    "id": "refund-cw1004-voucher",
+    "category": "refund",
+    "question": "I want to cancel CW-1004. How much do I get back and how will it be returned?",
+    "expected_tools": ["calculate_refund"],
+    "must_contain": ["73", "voucher"],
+    "must_not_contain": ["75", "has been cancelled", "I have cancelled", "I've cancelled"],
+    "expect_refusal": false,
+    "calculation": "start 2026-06-20 09:00, now 2026-06-10 09:00 -> 240h -> 48h or more -> 100% of rental 23 = 23; booking fee 2 never refunded; deposit 50 refunded in full -> 23 + 50 = 73 EUR; paid_with voucher -> refunded as a new voucher, never as money; the deposit is refunded the same way it was paid (voucher)",
+    "source": "data/policies/cancellations.md - Cancelling a booking; How the money comes back"
+  },
+  {
+    "id": "not-cancellable-cw1008-in-progress",
+    "category": "not_cancellable",
+    "question": "I want to cancel booking CW-1008 and get my money back.",
+    "expected_tools": ["calculate_refund"],
+    "must_contain": ["progress"],
+    "must_not_contain": ["66"],
+    "expect_refusal": false,
+    "calculation": "CW-1008 has status in_progress -> 'Bookings with the status in_progress, completed or cancelled cannot be cancelled, and nothing is refunded for them' (a hallucinated full refund would be 16 + 50 = 66)",
+    "source": "data/policies/cancellations.md - Cancelling a booking"
+  },
+  {
+    "id": "not-cancellable-cw1006-completed",
+    "category": "not_cancellable",
+    "question": "Can I cancel CW-1006 and get a refund?",
+    "expected_tools": ["calculate_refund"],
+    "must_contain": ["completed"],
+    "must_not_contain": ["72"],
+    "expect_refusal": false,
+    "calculation": "CW-1006 has status completed -> 'Bookings with the status in_progress, completed or cancelled cannot be cancelled, and nothing is refunded for them' (a hallucinated full refund would be 12 + 60 = 72)",
+    "source": "data/policies/cancellations.md - Cancelling a booking"
+  },
+  {
+    "id": "not-found-cw9999",
+    "category": "not_found",
+    "question": "What bike did I book under CW-9999?",
+    "expected_tools": ["get_booking"],
+    "must_contain": ["not found"],
+    "must_not_contain": ["e-bike"],
+    "expect_refusal": false,
+    "calculation": "No booking with id CW-9999 in data/bookings.json -> the agent must say the booking was not found and invent no details",
+    "source": "data/bookings.json"
+  },
+  {
+    "id": "booking-cw1001-facts",
+    "category": "booking",
+    "question": "What bike type is in booking CW-1001 and when does the rental start and end?",
+    "expected_tools": ["get_booking"],
+    "must_contain": ["city", "13", "15", "10:00"],
+    "must_not_contain": ["e-bike"],
+    "expect_refusal": false,
+    "calculation": "CW-1001: bike_type city, start 2026-06-13T10:00:00+02:00, end 2026-06-15T10:00:00+02:00",
+    "source": "data/bookings.json - CW-1001"
+  },
+  {
+    "id": "policy-saturday-hours",
+    "category": "policy",
+    "question": "What time do you open on Saturday?",
+    "expected_tools": ["search_policies"],
+    "must_contain": ["08:00", "20:00"],
+    "must_not_contain": [],
+    "expect_refusal": false,
+    "calculation": "Current date 2026-06-10 is in June -> 'April to October: every day, 08:00-20:00' (not the November-March hours 09:00-17:00)",
+    "source": "data/policies/faq.md - When are you open?"
+  },
+  {
+    "id": "policy-ebike-day-price",
+    "category": "policy",
+    "question": "How much is an e-bike for a whole day?",
+    "expected_tools": ["search_policies"],
+    "must_contain": ["40"],
+    "must_not_contain": [],
+    "expect_refusal": false,
+    "calculation": "Bike rental table: Electric bike (e-bike) - 40 EUR per day",
+    "source": "data/policies/prices.md - Bike rental"
+  },
+  {
+    "id": "policy-ebike-age-14",
+    "category": "policy",
+    "question": "Can my 14-year-old rent an e-bike?",
+    "expected_tools": ["search_policies"],
+    "must_contain": ["16"],
+    "must_not_contain": [],
+    "expect_refusal": false,
+    "calculation": "'Electric bikes: from 16 years old' -> a 14-year-old cannot rent an e-bike",
+    "source": "data/policies/faq.md - Are there age limits?"
+  },
+  {
+    "id": "policy-late-return-city",
+    "category": "policy",
+    "question": "What is the fee if I return a city bike 2 hours late?",
+    "expected_tools": ["search_policies"],
+    "must_contain": ["12", "deposit"],
+    "must_not_contain": [],
+    "expect_refusal": false,
+    "calculation": "city bike hourly price 4 EUR; late fee 1.5 x 4 = 6 EUR per started hour; 2 started hours -> 2 x 6 = 12 EUR, taken from the deposit",
+    "source": "data/policies/prices.md - Late return; Bike rental"
+  },
+  {
+    "id": "refusal-general-knowledge",
+    "category": "refusal",
+    "question": "What is the capital of Australia?",
+    "expected_tools": [],
+    "must_contain": ["help@citywheels.example"],
+    "must_not_contain": ["Canberra"],
+    "expect_refusal": true,
+    "calculation": "Not about CityWheels; no document answers it -> decline and point to the staff",
+    "source": "README.md - Example questions"
+  },
+  {
+    "id": "refusal-unrelated-task",
+    "category": "refusal",
+    "question": "Write me a Python function that sorts a list of numbers.",
+    "expected_tools": [],
+    "must_contain": ["help@citywheels.example"],
+    "must_not_contain": ["def "],
+    "expect_refusal": true,
+    "calculation": "Unrelated task, not a CityWheels question -> decline and point to the staff",
+    "source": "none - out of scope"
+  },
+  {
+    "id": "refusal-not-in-documents-parking",
+    "category": "refusal",
+    "question": "Is there a car park at your shop where I can leave my car?",
+    "expected_tools": ["search_policies"],
+    "must_contain": ["help@citywheels.example"],
+    "must_not_contain": [],
+    "expect_refusal": true,
+    "calculation": "CityWheels-related, but no document mentions car parking (faq.md 'Where are you?' gives only the park entrance and the tram stop) -> do not guess, point to the staff",
+    "source": "none - not covered by data/policies/*.md"
+  }
+]
