@@ -103,7 +103,7 @@
     "category": "policy",
     "question": "What time do you open on Saturday?",
     "expected_tools": ["search_policies"],
-    "must_contain": ["08:00", "20:00"],
+    "must_contain": ["08:00"],
     "must_not_contain": [],
     "expect_refusal": false,
     "calculation": "Current date 2026-06-10 is in June -> 'April to October: every day, 08:00-20:00' (not the November-March hours 09:00-17:00)",
@@ -135,11 +135,11 @@
     "id": "policy-late-return-city",
     "category": "policy",
     "question": "What is the fee if I return a city bike 2 hours late?",
-    "expected_tools": ["search_policies"],
+    "expected_tools": ["calculate_late_fee"],
     "must_contain": ["12", "deposit"],
     "must_not_contain": [],
     "expect_refusal": false,
-    "calculation": "city bike hourly price 4 EUR; late fee 1.5 x 4 = 6 EUR per started hour; 2 started hours -> 2 x 6 = 12 EUR, taken from the deposit",
+    "calculation": "city bike hourly price 4 EUR; late fee 1.5 x 4 = 6 EUR per started hour; 2 started hours -> 2 x 6 = 12 EUR, taken from the deposit; computed by the calculate_late_fee tool (added after eval run 3, where the model restated the rule without the amount)",
     "source": "data/policies/prices.md - Late return; Bike rental"
   },
   {

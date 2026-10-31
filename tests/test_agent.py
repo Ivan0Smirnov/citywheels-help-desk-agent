@@ -156,8 +156,39 @@ def test_empty_answer_falls_back(text):
 
 
 def test_tool_specs():
-    assert {t.name for t in TOOLS} == {"search_policies", "get_booking", "calculate_refund"}
+    assert {t.name for t in TOOLS} == {
+        "search_policies",
+        "get_booking",
+        "calculate_refund",
+        "calculate_late_fee",
+    }
     for spec in TOOLS:
         assert spec.description
         assert spec.parameters["type"] == "object"
         assert spec.parameters["required"] == list(spec.parameters["properties"])
+
+
+@pytest.mark.parametrize("hours_late", ["2", True, None])
+def test_number_arguments_are_checked(hours_late):
+    _, model = ask(
+        ModelReply(
+            tool_calls=(ToolCall("calculate_late_fee", {"bike_type": "city", "hours_late": hours_late}),)
+        ),
+        ModelReply(text="done"),
+    )
+
+    assert tool_results(model.calls[1]) == [
+        {"error": "invalid arguments for calculate_late_fee: argument hours_late must be a number"}
+    ]
+
+
+def test_late_fee_tool_runs_fee_code():
+    _, model = ask(
+        ModelReply(
+            tool_calls=(ToolCall("calculate_late_fee", {"bike_type": "city", "hours_late": 2}),)
+        ),
+        ModelReply(text="12 EUR"),
+    )
+
+    [fee] = tool_results(model.calls[1])
+    assert fee["late_fee_eur"] == 12.0

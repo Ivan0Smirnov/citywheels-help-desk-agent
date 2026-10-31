@@ -6,10 +6,12 @@ import pytest
 from citywheels.agent import ModelReply, ToolCall
 from citywheels.evaluation import (
     QuestionResult,
+    RateLimitedModel,
     check,
     contains,
     load_questions,
     render_markdown,
+    run_eval,
     run_question,
 )
 
@@ -102,7 +104,7 @@ def test_retry_then_error():
 
     assert result.status == "ERROR"
     assert result.error == "ConnectionError: 503 again"
-    assert waits == [15]
+    assert waits == [60]
 
 
 def test_retry_then_pass():
@@ -116,7 +118,7 @@ def test_retry_then_pass():
     result = run_question(REFUND_QUESTION, model, sleep=waits.append)
 
     assert result.status == "PASS"
-    assert waits == [15]
+    assert waits == [60]
 
 
 def test_render_markdown():
@@ -148,3 +150,48 @@ def test_questions_file():
     assert all(required <= q.keys() for q in questions)
     assert sum(q["category"] == "refund" for q in questions) >= 2
     assert sum(q["expect_refusal"] for q in questions) >= 2
+
+
+DAILY_429 = RuntimeError(
+    "429 RESOURCE_EXHAUSTED. Quota exceeded: Generate content requests per day limit exceeded "
+    "on Free Tier. " + "x" * 300
+)
+
+
+def test_daily_quota_is_not_retried():
+    waits = []
+    result = run_question(REFUND_QUESTION, ScriptedModel(DAILY_429), sleep=waits.append)
+
+    assert result.status == "ERROR"
+    assert waits == []
+    assert result.error.startswith("daily quota exhausted: RuntimeError: 429 RESOURCE_EXHAUSTED.")
+    assert len(result.error) <= len("daily quota exhausted: ") + 160
+
+
+def test_run_eval_skips_the_rest_after_daily_quota():
+    model = ScriptedModel(DAILY_429)  # a second generate() call would fail with IndexError
+    other = dict(REFUND_QUESTION, id="second")
+
+    results = run_eval([REFUND_QUESTION, other], model, sleep=lambda s: None)
+
+    assert [r.status for r in results] == ["ERROR", "ERROR"]
+    assert results[1].error == "daily quota exhausted: skipped, not sent"
+
+
+def test_rate_limited_model_spaces_calls():
+    now = [0.0]
+    waits = []
+
+    def sleep(seconds):
+        waits.append(seconds)
+        now[0] += seconds
+
+    model = RateLimitedModel(
+        ScriptedModel(*[ModelReply(text="ok")] * 3), rpm=15, clock=lambda: now[0], sleep=sleep
+    )
+    model.generate("p", [], [])
+    now[0] += 1.0  # the caller spent 1 s between calls
+    model.generate("p", [], [])
+    model.generate("p", [], [])
+
+    assert waits == [3.0, 4.0]
