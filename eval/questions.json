@@ -174,5 +174,16 @@
     "expect_refusal": true,
     "calculation": "CityWheels-related, but no document mentions car parking (faq.md 'Where are you?' gives only the park entrance and the tram stop) -> do not guess, point to the staff",
     "source": "none - not covered by data/policies/*.md"
+  },
+  {
+    "id": "invalid-id-12345",
+    "category": "not_found",
+    "question": "What bike is in my booking 12345?",
+    "expected_tools": [],
+    "must_contain": [],
+    "must_not_contain": ["e-bike", "city bike", "kids bike"],
+    "expect_refusal": false,
+    "calculation": "12345 is not a booking number (format CW-1234): get_booking returns invalid_id or the agent asks for the number; either way it must not invent a booking",
+    "source": "data/bookings.json"
   }
 ]
