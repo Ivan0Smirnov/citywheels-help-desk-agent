@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Protocol
 
 from citywheels.bookings import get_booking
+from citywheels.fees import calculate_late_fee
 from citywheels.policies import search_policies
 from citywheels.refund import refund_for_booking
 
@@ -93,6 +94,23 @@ TOOLS = [
         parameters=_string_params(booking_id="Booking number, e.g. CW-1001."),
         function=refund_for_booking,
     ),
+    ToolSpec(
+        name="calculate_late_fee",
+        description=(
+            "Calculate the late return fee for one bike returned after the end of the rental. "
+            "The amount is computed by code from the price list: always use this tool for "
+            "late fees and never calculate them yourself."
+        ),
+        parameters={
+            "type": "object",
+            "properties": {
+                "bike_type": {"type": "string", "enum": ["city", "e-bike", "kids"]},
+                "hours_late": {"type": "number", "description": "Delay in hours, e.g. 2 or 0.5."},
+            },
+            "required": ["bike_type", "hours_late"],
+        },
+        function=calculate_late_fee,
+    ),
 ]
 
 
@@ -112,8 +130,12 @@ def _check_args(spec: ToolSpec, args: Any) -> str | None:
     if missing:
         return f"missing arguments: {', '.join(missing)}"
     for name, value in args.items():
-        if declared[name]["type"] == "string" and not isinstance(value, str):
+        kind = declared[name]["type"]
+        if kind == "string" and not isinstance(value, str):
             return f"argument {name} must be a string"
+        # bool is an int subclass in Python; true/false is not a number of hours.
+        if kind == "number" and (isinstance(value, bool) or not isinstance(value, (int, float))):
+            return f"argument {name} must be a number"
     return None
 
 
