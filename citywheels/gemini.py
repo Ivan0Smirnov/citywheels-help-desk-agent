@@ -5,7 +5,7 @@ from google.genai import types
 
 from citywheels.agent import ModelReply, ToolCall, ToolSpec
 
-DEFAULT_MODEL = "gemini-3.5-flash"
+DEFAULT_MODEL = "gemini-3.5-flash-lite"
 
 
 class MissingApiKey(Exception):
